@@ -303,7 +303,7 @@ int main(int argc, char** argv)
 			}
 			else if (optArg.equals("-g", "--gpu")) {
 				gpuEnable = true;
-				nbCPUThread = 0;
+				//nbCPUThread = 0; // Disable CPU threads if GPU is enabled bu TUSAR
 			}
 			else if (optArg.equals("", "--gpui")) {
 				string ids = optArg.arg;
@@ -475,11 +475,11 @@ int main(int argc, char** argv)
 		usage();
 		return -1;
 	}
-	if (nbCPUThread > 0 && gpuEnable) {
-		printf("Error: %s\n", "Invalid arguments, CPU and GPU, both can't be used together right now\n");
-		usage();
-		return -1;
-	}
+	//if (nbCPUThread > 0 && gpuEnable) {
+		//printf("Error: %s\n", "Invalid arguments, CPU and GPU, both can't be used together right now\n");
+	//	usage();
+		//return -1;
+	//}
 
 	// Let one CPU core free per gpu is gpu is enabled
 	// It will avoid to hang the system
