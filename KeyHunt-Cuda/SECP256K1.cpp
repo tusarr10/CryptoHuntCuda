@@ -22,6 +22,8 @@
 #include "Base58.h"
 #include <string.h>
 
+#include "Bech32.h"
+
 Secp256K1::Secp256K1()
 {
 }
@@ -80,17 +82,33 @@ void CheckAddress(Secp256K1* T, std::string address, std::string privKeyStr)
 	Int privKey = T->DecodePrivateKey((char*)privKeyStr.c_str(), &isCompressed);
 	Point pub = T->ComputePublicKey(&privKey);
 
-	std::string calcAddress = T->GetAddress(isCompressed, pub);
+	//std::string calcAddress = T->GetAddress(isCompressed, pub);
+	//std::string calcAddressAll = T->GetAllAddresses(isCompressed,pub);	
+	////for each address starting 1,3, bc1 etc filter with address 
+	//printf("Adress : %s ", address.c_str());
 
-	printf("Adress : %s ", address.c_str());
+	//if (address == calcAddress) {
+	//	printf("OK!\n");
+	//	return;
+	//}
+	// Generate ALL address types: 1..., 3..., bc1...
+	std::vector<std::string> generatedAddresses = T->GetAllAddresses(isCompressed, pub);
 
-	if (address == calcAddress) {
-		printf("OK!\n");
-		return;
+	// Print what we're testing
+	printf("Address : %s ", address.c_str());
+
+	// Check if ANY of the generated addresses matches the target
+	for (const std::string& addr : generatedAddresses) {
+		if (addr == address) {
+			printf("OK! [%s]\n", addr.c_str());
+			return;
+		}
 	}
 
-	printf("Failed ! \n %s\n", calcAddress.c_str());
-
+	printf("Failed ! \n %s\n", generatedAddresses[0].c_str());
+	printf("Failed ! \n %s\n", generatedAddresses[1].c_str());
+	printf("Failed ! \n %s\n", generatedAddresses[2].c_str());
+	printf("Failed!\n");
 }
 
 void Secp256K1::Check()
@@ -664,7 +682,7 @@ std::string Secp256K1::GetPrivAddress(bool compressed, Int& privKey)
 (buff)[13] = 0; \
 (buff)[14] = 0; \
 (buff)[15] = 0xA8;
-
+/*
 std::vector<std::string> Secp256K1::GetAddress(bool compressed, unsigned char* h1, unsigned char* h2, unsigned char* h3, unsigned char* h4)
 {
 
@@ -703,6 +721,7 @@ std::vector<std::string> Secp256K1::GetAddress(bool compressed, unsigned char* h
 	return ret;
 
 }
+*/
 
 std::string Secp256K1::GetAddress(bool compressed, unsigned char* hash160)
 {
@@ -715,6 +734,121 @@ std::string Secp256K1::GetAddress(bool compressed, unsigned char* hash160)
 	// Base58
 	return EncodeBase58(address, address + 25);
 
+}
+std::vector<std::string> Secp256K1::GetAllAddress(bool compresses, unsigned char* hash160)
+{
+	std::vector<std::string> results;
+
+	// 1. P2PKH
+	unsigned char addr[25];
+	addr[0] = 0x00;
+	memcpy(addr + 1, hash160, 20);
+	sha256_checksum(addr, 21, addr + 21);
+	results.push_back(EncodeBase58(addr, addr + 25));
+
+	// 2. P2SH-P2WPKH
+	unsigned char script[22];
+	script[0] = 0x00;
+	script[1] = 0x14;
+	memcpy(script + 2, hash160, 20);
+
+	unsigned char script_hash160[20];
+	unsigned char sha256_out[32];
+	sha256(script, 22, sha256_out);
+	ripemd160(sha256_out, 32, script_hash160);
+
+	addr[0] = 0x05;
+	memcpy(addr + 1, script_hash160, 20);
+	sha256_checksum(addr, 21, addr + 21);
+	results.push_back(EncodeBase58(addr, addr + 25));
+
+	// 3. Bech32
+	char bech32_addr[100];
+	if (segwit_addr_encode(bech32_addr, "bc", 0, hash160, 20)) {
+		results.push_back(std::string(bech32_addr));
+	}
+	else {
+		results.push_back("");
+	}
+
+	return results;
+}
+
+
+// Legacy address starting with 1 and Delete in future development
+std::string Secp256K1::GetAddress(bool compressed, Point& pubKey)
+{
+
+	unsigned char address[25];
+
+	address[0] = 0x00;
+
+	GetHash160(compressed, pubKey, address + 1);
+	sha256_checksum(address, 21, address + 21);
+
+	// Base58
+	return EncodeBase58(address, address + 25);
+
+}
+
+// Best Version it return all 3 types of address [0] for 1 ..., [1] for 3... and [2] for bc1...
+std::vector<std::string> Secp256K1::GetAllAddresses(bool compressed, Point& pubKey)
+{
+	std::vector<std::string> results;
+	unsigned char hash160[20];
+
+	// Step 1: Compute hash160 = RIPEMD-160(SHA-256(pubkey))
+	GetHash160(compressed, pubKey, hash160);  // 'true' doesn't matter here — we handle type below
+
+	// -----------------------------
+	// 1. P2PKH: 1... address
+	// -----------------------------
+	{
+		unsigned char addr[25];
+		addr[0] = 0x00;  // P2PKH prefix
+		memcpy(addr + 1, hash160, 20);
+		sha256_checksum(addr, 21, addr + 21);
+		results.push_back(EncodeBase58(addr, addr + 25));
+	}
+
+	// -----------------------------
+	// 2. P2SH: 3... (P2SH-P2WPKH)
+	// -----------------------------
+	// Script: OP_0 <hash160>
+	{
+		// Create script: OP_0 <20-byte hash160>
+		unsigned char script[22];
+		script[0] = 0x00;           // OP_0
+		script[1] = 0x14;           // PUSH 20 bytes
+		memcpy(script + 2, hash160, 20);
+
+		// Hash the script
+		unsigned char script_hash160[20];
+		unsigned char sha256_out[32];
+		sha256(script, 22, sha256_out);
+		ripemd160(sha256_out, 32, script_hash160);
+
+		// Encode as P2SH
+		unsigned char addr[25];
+		addr[0] = 0x05;
+		memcpy(addr + 1, script_hash160, 20);
+		sha256_checksum(addr, 21, addr + 21);
+		results.push_back(EncodeBase58(addr, addr + 25));
+	}
+
+	// -----------------------------
+	// 3. Bech32: bc1... (P2WPKH)
+	// -----------------------------
+	// Witness: version 0, 20-byte hash160
+	{
+		char bech32_addr[100];  // Large enough for any Bech32 address
+		if (segwit_addr_encode(bech32_addr, "bc", 0, hash160, 20)) {
+			results.push_back(std::string(bech32_addr));
+		}
+		// If encode fails, just skip (shouldn't happen)
+	}
+
+	return results;
 }
 
 std::string Secp256K1::GetAddressETH(unsigned char* hash)
@@ -729,21 +863,6 @@ std::string Secp256K1::GetAddressETH(unsigned char* hash)
 	}
 
 	return ret;
-}
-
-std::string Secp256K1::GetAddress(bool compressed, Point& pubKey)
-{
-
-	unsigned char address[25];
-
-	address[0] = 0x00;
-
-	GetHash160(compressed, pubKey, address + 1);
-	sha256_checksum(address, 21, address + 21);
-
-	// Base58
-	return EncodeBase58(address, address + 25);
-
 }
 
 std::string Secp256K1::GetAddressETH(Point& pubKey)

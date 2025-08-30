@@ -1,4 +1,4 @@
-#include "KeyHunt.h"
+﻿#include "KeyHunt.h"
 #include "GmpUtil.h"
 #include "Base58.h"
 #include "hash/sha256.h"
@@ -272,8 +272,8 @@ void KeyHunt::output(std::string addr, std::string pAddr, std::string pAddrHex, 
 }
 
 // ----------------------------------------------------------------------------
-
-bool KeyHunt::checkPrivKey(std::string addr, Int& key, int32_t incr, bool mode)
+/*
+bool KeyHunt::Backup_checkPrivKey(std::string addr, Int& key, int32_t incr, bool mode)
 {
 	Int k(&key), k2(&key);
 	k.Add((uint64_t)incr);
@@ -303,6 +303,48 @@ bool KeyHunt::checkPrivKey(std::string addr, Int& key, int32_t incr, bool mode)
 	}
 	output(addr, secp->GetPrivAddress(mode, k), k.GetBase16(), secp->GetPublicKeyHex(mode, p));
 	return true;
+}
+*/
+bool KeyHunt::checkPrivKey(std::string targetAddr, Int& key, int32_t incr, bool mode)
+{
+	Int k(&key);
+	k.Add((uint64_t)incr);
+
+	Int kOriginal(&k);
+	Point pubKey = secp->ComputePublicKey(&k);
+	std::vector<std::string> generatedAddrs = secp->GetAllAddresses(mode, pubKey);
+
+	for (const std::string& addr : generatedAddrs) {
+		if (addr == targetAddr) {
+			// ✅ Match found — output both WIFs
+			std::string wifCompressed = secp->GetPrivAddress(true, k);
+			std::string wifUncompressed = secp->GetPrivAddress(false, k);			
+			std::string privateKeyHex = k.GetBase16();
+			std::string publicKeyHex = secp->GetPublicKeyHex(mode, pubKey);
+
+			output(
+				addr,                   // matched public address
+				wifCompressed, 	 // WIF compressed private key
+				privateKeyHex,          // HEX private key
+				publicKeyHex  // Public key hex
+			);
+			return true;
+		}
+	}
+
+	// ❌ No match
+	printf("\n%s\n", "=================================================================================");
+	printf("Warning, wrong private key generated!\n");
+	printf("  Target : %s\n", targetAddr.c_str());
+	printf("  PivK   : %s\n", kOriginal.GetBase16().c_str());
+
+	auto sample = secp->GetAllAddresses(mode, secp->ComputePublicKey(&kOriginal));
+	printf("  P2PKH  : %s\n", sample[0].c_str());
+	printf("  P2SH   : %s\n", sample[1].c_str());
+	printf("  Bech32 : %s\n", sample[2].c_str());
+	printf("%s\n", "=================================================================================");
+
+	return false;
 }
 
 bool KeyHunt::checkPrivKeyETH(std::string addr, Int& key, int32_t incr)
@@ -390,6 +432,21 @@ void KeyHunt::checkMultiAddresses(bool compressed, Int key, int i, Point p1)
 }
 
 // ----------------------------------------------------------------------------
+void KeyHunt::checkSingleAddress(bool compressed, Int key, int i, Point p1)
+{
+	unsigned char h0[20];
+
+	// Point
+	secp->GetHash160(compressed, p1, h0);
+	if (MatchHash((uint32_t*)h0)) {
+		std::string addr = secp->GetAddress(compressed, h0);
+		if (checkPrivKey(addr, key, i, compressed)) {
+			nbFoundKey++;
+		}
+	}
+}
+
+// ----------------------------------------------------------------------------
 
 void KeyHunt::checkMultiAddressesETH(Int key, int i, Point p1)
 {
@@ -400,22 +457,6 @@ void KeyHunt::checkMultiAddressesETH(Int key, int i, Point p1)
 	if (CheckBloomBinary(h0, 20) > 0) {
 		std::string addr = secp->GetAddressETH(h0);
 		if (checkPrivKeyETH(addr, key, i)) {
-			nbFoundKey++;
-		}
-	}
-}
-
-// ----------------------------------------------------------------------------
-
-void KeyHunt::checkSingleAddress(bool compressed, Int key, int i, Point p1)
-{
-	unsigned char h0[20];
-
-	// Point
-	secp->GetHash160(compressed, p1, h0);
-	if (MatchHash((uint32_t*)h0)) {
-		std::string addr = secp->GetAddress(compressed, h0);
-		if (checkPrivKey(addr, key, i, compressed)) {
 			nbFoundKey++;
 		}
 	}

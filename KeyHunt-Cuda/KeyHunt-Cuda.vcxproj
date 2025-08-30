@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Base58.cpp" />
+    <ClCompile Include="Bech32.cpp" />
     <ClCompile Include="Bloom.cpp" />
     <ClCompile Include="CmdParse.cpp" />
     <ClCompile Include="GmpUtil.cpp" />
@@ -34,6 +35,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Base58.h" />
+    <ClInclude Include="Bech32.h" />
     <ClInclude Include="Bloom.h" />
     <ClInclude Include="CmdParse.h" />
     <ClInclude Include="GmpUtil.h" />
