@@ -245,8 +245,10 @@ void KeyHunt::output(std::string addr, std::string pAddr, std::string pAddrHex, 
 	fprintf(f, "PubAddress: %s\n", addr.c_str());
 	fprintf(stdout, "\n=================================================================================\n");
 	fprintf(stdout, "PubAddress: %s\n", addr.c_str());
+	
 
 	if (coinType == COIN_BTC) {
+		
 		fprintf(f, "Priv (WIF): p2pkh:%s\n", pAddr.c_str());
 		fprintf(stdout, "Priv (WIF): p2pkh:%s\n", pAddr.c_str());
 	}
@@ -269,6 +271,84 @@ void KeyHunt::output(std::string addr, std::string pAddr, std::string pAddrHex, 
 	pthread_mutex_unlock(&ghMutex);
 #endif
 
+}
+
+
+void KeyHunt::output1(std::string addr, std::string pAddrCompressed, std::string pAddrHex, std::string pubKeyHex, Int& pvtKey)
+{
+#ifdef WIN64
+	WaitForSingleObject(ghMutex, INFINITE);
+#else
+	pthread_mutex_lock(&ghMutex);
+#endif
+
+	FILE* f = stdout;
+	bool needToClose = false;
+
+	if (outputFile.length() > 0) {
+		f = fopen(outputFile.c_str(), "a");
+		if (f == NULL) {
+			printf("Cannot open %s for writing\n", outputFile.c_str());
+			f = stdout;
+		}
+		else {
+			needToClose = true;
+		}
+	}
+
+	if (!needToClose)
+		printf("\n");
+
+	const char* separator = "=================================================================================";
+	fprintf(f, "%s\n", separator);
+	fprintf(stdout, "%s\n", separator);
+
+	if (coinType == COIN_BTC) {
+		// --- Reconstruct Point using public method ---
+		bool isCompressed;
+		Point pubKey = secp->ParsePublicKeyHex(pubKeyHex, isCompressed);
+
+		// Generate all 3 address types
+		std::vector<std::string> addrs = secp->GetAllAddresses(isCompressed, pubKey);
+
+		fprintf(f, "P2PKH  (1...): %s\n", addrs[0].c_str());
+		fprintf(stdout, "P2PKH  (1...): %s\n", addrs[0].c_str());
+
+		fprintf(f, "P2SH   (3...): %s\n", addrs[1].c_str());
+		fprintf(stdout, "P2SH   (3...): %s\n", addrs[1].c_str());
+
+		fprintf(f, "Bech32 (bc1..): %s\n", addrs[2].c_str());
+		fprintf(stdout, "Bech32 (bc1..): %s\n", addrs[2].c_str());
+	}
+
+	// --- Private Keys ---
+	Int privKey(pvtKey);
+	std::string wifCompressed = secp->GetPrivAddress(true, privKey);
+	std::string wifUncompressed = secp->GetPrivAddress(false, privKey);
+
+	fprintf(f, "Priv (WIF-C): %s\n", wifCompressed.c_str());
+	fprintf(stdout, "Priv (WIF-C): %s\n", wifCompressed.c_str());
+
+	fprintf(f, "Priv (WIF-U): %s\n", wifUncompressed.c_str());
+	fprintf(stdout, "Priv (WIF-U): %s\n", wifUncompressed.c_str());
+
+	fprintf(f, "Priv (HEX)  : %s\n", pAddrHex.c_str());
+	fprintf(stdout, "Priv (HEX)  : %s\n", pAddrHex.c_str());
+
+	fprintf(f, "PubK (HEX)  : %s\n", pubKeyHex.c_str());
+	fprintf(stdout, "PubK (HEX)  : %s\n", pubKeyHex.c_str());
+
+	fprintf(f, "%s\n", separator);
+	fprintf(stdout, "%s\n", separator);
+
+	if (needToClose)
+		fclose(f);
+
+#ifdef WIN64
+	ReleaseMutex(ghMutex);
+#else
+	pthread_mutex_unlock(&ghMutex);
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -322,11 +402,12 @@ bool KeyHunt::checkPrivKey(std::string targetAddr, Int& key, int32_t incr, bool 
 			std::string privateKeyHex = k.GetBase16();
 			std::string publicKeyHex = secp->GetPublicKeyHex(mode, pubKey);
 
-			output(
+			output1(
 				addr,                   // matched public address
 				wifCompressed, 	 // WIF compressed private key
 				privateKeyHex,          // HEX private key
-				publicKeyHex  // Public key hex
+				publicKeyHex , // Public key hex
+				kOriginal               // original private key
 			);
 			return true;
 		}

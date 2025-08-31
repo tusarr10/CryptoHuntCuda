@@ -1182,3 +1182,11 @@ bool Secp256K1::EC(Point& p)
 	return _s.IsZero(); // ( ((pow2(y) - (pow3(x) + 7)) % P) == 0 );
 
 }
+Point Secp256K1::ComputeYFromX(Int* x, bool isEven)
+{
+	Point p;
+	p.x = *x;
+	p.y = GetY(*x, isEven);
+	p.z.SetInt32(1);
+	return p;
+}

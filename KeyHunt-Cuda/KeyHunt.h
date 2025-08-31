@@ -69,6 +69,7 @@ private:
 	void checkSingleAddressesSSE(bool compressed, Int key, int i, Point p1, Point p2, Point p3, Point p4);
 
 	void output(std::string addr, std::string pAddr, std::string pAddrHex, std::string pubKey);
+	void output1(std::string addr, std::string pAddrCompressed, std::string pAddrHex, std::string pubKeyHex, Int& pvtKey);
 	bool isAlive(TH_PARAM* p);
 
 	bool hasStarted(TH_PARAM* p);

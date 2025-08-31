@@ -101,6 +101,8 @@ public:
     // Used to validate public keys.
     bool EC(Point& p);
 
+    Point ComputeYFromX(Int* x, bool isEven);
+
     // -----------------------------
     // Batch Hash160 (4 keys at once, SSE-optimized)
     // -----------------------------
