@@ -419,7 +419,9 @@ bool KeyHunt::checkPrivKey(std::string targetAddr, Int& key, int32_t incr, bool 
 	printf("  Target : %s\n", targetAddr.c_str());
 	printf("  PivK   : %s\n", kOriginal.GetBase16().c_str());
 
-	auto sample = secp->GetAllAddresses(mode, secp->ComputePublicKey(&kOriginal));
+	//auto sample = secp->GetAllAddresses(mode, secp->ComputePublicKey(&kOriginal));
+	//Point pubKey1 = secp->ComputePublicKey(&kOriginal);
+	auto sample = secp->GetAllAddresses(mode, pubKey);
 	printf("  P2PKH  : %s\n", sample[0].c_str());
 	printf("  P2SH   : %s\n", sample[1].c_str());
 	printf("  Bech32 : %s\n", sample[2].c_str());
