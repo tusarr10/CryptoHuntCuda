@@ -1,18 +1,5 @@
-/*
- * This file is part of the VanitySearch distribution (https://github.com/JeanLucPons/VanitySearch).
- * Copyright (c) 2019 Jean Luc PONS.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, version 3.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+﻿/*
+
 */
 
 #include "GPUEngine.h"
@@ -262,6 +249,9 @@ GPUEngine::GPUEngine(Secp256K1* secp, int nbThreadGroup, int nbThreadPerGroup, i
 	compMode = SEARCH_COMPRESSED;
 	initialised = true;
 
+	// ✅ Initialize lastProcessedKey
+	lastProcessedKey = "";
+
 }
 
 // ----------------------------------------------------------------------------
@@ -345,9 +335,19 @@ GPUEngine::GPUEngine(Secp256K1* secp, int nbThreadGroup, int nbThreadPerGroup, i
 	compMode = SEARCH_COMPRESSED;
 	initialised = true;
 
+	// ✅ Initialize lastProcessedKey
+	lastProcessedKey = "";
+
 }
 
 // ----------------------------------------------------------------------------
+
+bool GPUEngine::SetStartPrivKey(Int& key)
+{
+	startPrivKey.Set(&key);
+	return true;
+}
+// ------------------------------------------------------------------
 
 void GPUEngine::InitGenratorTable(Secp256K1* secp)
 {
@@ -711,6 +711,17 @@ bool GPUEngine::LaunchSEARCH_MODE_MA(std::vector<ITEM>& dataFound, bool spinWait
 			dataFound.push_back(it);
 		}
 	}
+	// ✅ Compute next starting key
+	Int nextKey;
+	nextKey.Set(&startPrivKey);
+	nextKey.Add((uint64_t)(STEP_SIZE * nbThread));  // Advance by full batch
+
+	// ✅ Save it
+	lastProcessedKey = nextKey.GetBase16();
+
+	// ✅ Update for next batch
+	startPrivKey.Set(&nextKey);
+
 	return callKernelSEARCH_MODE_MA();
 }
 

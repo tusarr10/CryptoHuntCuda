@@ -1,18 +1,5 @@
-/*
- * This file is part of the VanitySearch distribution (https://github.com/JeanLucPons/VanitySearch).
- * Copyright (c) 2019 Jean Luc PONS.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, version 3.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+﻿/*
+ 
 */
 
 #ifndef GPUENGINEH
@@ -81,6 +68,12 @@ public:
 	static void PrintCudaInfo();
 	static void GenerateCode(Secp256K1* secp, int size);
 
+	std::string lastProcessedKey;           // Will store last key of batch
+	std::string GetLastKey() {              // Inline getter
+		return lastProcessedKey;
+	}										 // Returns lastProcessedKey
+	bool SetStartPrivKey(Int& key);  // Add this
+
 private:
 	void InitGenratorTable(Secp256K1* secp);
 
@@ -129,6 +122,8 @@ private:
 
 	uint8_t* DATA;
 	uint64_t TOTAL_COUNT;
+
+	Int startPrivKey;  // Store the starting private key
 
 };
 

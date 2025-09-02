@@ -997,6 +997,7 @@ void KeyHunt::FindKeyGPU(TH_PARAM * ph)
 	Int tRangeEnd = ph->rangeEnd;
 
 	GPUEngine* g;
+	
 	switch (searchMode) {
 	case (int)SEARCH_MODE_MA:
 	case (int)SEARCH_MODE_MX:
@@ -1017,6 +1018,8 @@ void KeyHunt::FindKeyGPU(TH_PARAM * ph)
 		break;
 	}
 
+	// ✅ Save g in TH_PARAM for progress logging
+	ph->gpuEngine = g;
 
 	int nbThread = g->GetNbThread();
 	Point* p = new Point[nbThread];
@@ -1030,6 +1033,11 @@ void KeyHunt::FindKeyGPU(TH_PARAM * ph)
 	getGPUStartingKeys(tRangeStart, tRangeEnd, g->GetGroupSize(), nbThread, keys, p);
 	ok = g->SetKeys(p);
 
+	// ✅ Set the first key as starting private key for batch tracking
+	if (ok) {
+		g->SetStartPrivKey(keys[0]);  // Use first thread's key as batch start
+	}
+
 	ph->hasStarted = true;
 	ph->rKeyRequest = false;
 
@@ -1039,7 +1047,13 @@ void KeyHunt::FindKeyGPU(TH_PARAM * ph)
 		if (ph->rKeyRequest) {
 			getGPUStartingKeys(tRangeStart, tRangeEnd, g->GetGroupSize(), nbThread, keys, p);
 			ok = g->SetKeys(p);
+
+			if (ok) {
+				g->SetStartPrivKey(keys[0]);  // Update starting private key for progress tracking
+			}
+
 			ph->rKeyRequest = false;
+
 		}
 
 		// Call kernel
@@ -1204,6 +1218,7 @@ void KeyHunt::SetupRanges(uint32_t totalThreads)
 
 // ----------------------------------------------------------------------------
 
+// ----------------------------------------------------------------------------
 void KeyHunt::Search(int nbThread, std::vector<int> gpuId, std::vector<int> gridSize, bool& should_exit)
 {
 
@@ -1238,11 +1253,11 @@ void KeyHunt::Search(int nbThread, std::vector<int> gpuId, std::vector<int> grid
 #ifdef WIN64
 		DWORD thread_id;
 		CreateThread(NULL, 0, _FindKeyCPU, (void*)(params + i), 0, &thread_id);
-		ghMutex = CreateMutex(NULL, FALSE, NULL);
+		if (i == 0) ghMutex = CreateMutex(NULL, FALSE, NULL);
 #else
 		pthread_t thread_id;
 		pthread_create(&thread_id, NULL, &_FindKeyCPU, (void*)(params + i));
-		ghMutex = PTHREAD_MUTEX_INITIALIZER;
+		if (i == 0) ghMutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 	}
 
@@ -1259,6 +1274,8 @@ void KeyHunt::Search(int nbThread, std::vector<int> gpuId, std::vector<int> grid
 		rangeStart.Add(&rangeDiff);
 		params[nbCPUThread + i].rangeEnd.Set(&rangeStart);
 
+		// ✅ Initialize gpuEngine to NULL
+		params[nbCPUThread + i].gpuEngine = nullptr;
 
 #ifdef WIN64
 		DWORD thread_id;
@@ -1280,31 +1297,42 @@ void KeyHunt::Search(int nbThread, std::vector<int> gpuId, std::vector<int> grid
 
 	// Key rate smoothing filter
 #define FILTER_SIZE 8
-	double lastkeyRate[FILTER_SIZE];
-	double lastGpukeyRate[FILTER_SIZE];
+	double lastkeyRate[FILTER_SIZE] = { 0 };
+	double lastGpukeyRate[FILTER_SIZE] = { 0 };
 	uint32_t filterPos = 0;
 
 	double keyRate = 0.0;
 	double gpuKeyRate = 0.0;
-	char timeStr[256];
+	char timeStr[256] = { 0 };
 
-	memset(lastkeyRate, 0, sizeof(lastkeyRate));
-	memset(lastGpukeyRate, 0, sizeof(lastkeyRate));
-
-	// Wait that all threads have started
-	while (!hasStarted(params)) {
-		Timer::SleepMillis(500);
+	// Progress logging
+	double tLastLog = Timer::get_tick();
+	const double LOG_INTERVAL = 300.0; // 5 minutes
+	FILE* logFile = fopen("progress.log", "a");
+	if (logFile) {
+		time_t now = time(nullptr);
+		fprintf(logFile, "=== Search Started at %s", ctime(&now));
+		fprintf(logFile, "Range: %s:%s\n", this->rangeStart.GetBase16().c_str(), this->rangeEnd.GetBase16().c_str());
+		fclose(logFile);
 	}
 
 	// Reset timer
 	Timer::Init();
 	t0 = Timer::get_tick();
 	startTime = t0;
+
 	Int p100;
 	Int ICount;
 	p100.SetInt32(100);
 	double completedPerc = 0;
 	uint64_t rKeyCount = 0;
+
+	// Wait that all threads have started
+	while (!hasStarted(params)) {
+		Timer::SleepMillis(500);
+	}
+
+	// Main loop
 	while (isAlive(params)) {
 
 		int delay = 2000;
@@ -1319,9 +1347,6 @@ void KeyHunt::Search(int nbThread, std::vector<int> gpuId, std::vector<int> grid
 		int completedBits = ICount.GetBitLength();
 		if (rKey <= 0) {
 			completedPerc = CalcPercantage(ICount, rangeStart, rangeDiff2);
-			//ICount.Mult(&p100);
-			//ICount.Div(&this->rangeDiff2);
-			//completedPerc = std::stoi(ICount.GetBase10());
 		}
 
 		t1 = Timer::get_tick();
@@ -1344,8 +1369,8 @@ void KeyHunt::Search(int nbThread, std::vector<int> gpuId, std::vector<int> grid
 
 		if (isAlive(params)) {
 			memset(timeStr, '\0', 256);
-			printf("\r[%s] [CPU+GPU: %.2f Mk/s] [GPU: %.2f Mk/s] [C: %lf %%] [R: %llu] [T: %s (%d bit)] [F: %d]  ",
-				toTimeStr(t1, timeStr),
+			printf("\r[%s] [CPU+GPU: %.2f Mk/s] [GPU: %.2f Mk/s] [C: %.2f %%] [R: %llu] [T: %s (%d bit)] [F: %d]  ",
+				toTimeStr((int)(t1 - startTime), timeStr),
 				avgKeyRate / 1000000.0,
 				avgGpuKeyRate / 1000000.0,
 				completedPerc,
@@ -1354,6 +1379,58 @@ void KeyHunt::Search(int nbThread, std::vector<int> gpuId, std::vector<int> grid
 				completedBits,
 				nbFoundKey);
 		}
+
+		// ✅ Log progress and save resume point every 5 minutes
+		if (t1 - tLastLog >= LOG_INTERVAL) {
+			// --- 1. Save to progress.log ---
+			logFile = fopen("progress.log", "a");
+			if (logFile) {
+				char timestamp[64];
+				time_t now = time(nullptr);
+				strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&now));
+				fprintf(logFile, "[%s] Progress: %.2f%% | Keys: %s | Speed: %.2f Mk/s | Found: %d\n",
+					timestamp,
+					completedPerc,
+					formatThousands(count).c_str(),
+					avgKeyRate / 1e6,
+					nbFoundKey);
+				fclose(logFile);
+			}
+
+			// --- 2. Save to resume.txt ---
+			std::string lastKeyHex;
+
+			if (nbCPUThread > 0) {
+				// CPU: last key = start + total keys scanned
+				Int lastKey;
+				lastKey.Set(&params[nbCPUThread - 1].rangeStart);
+				lastKey.Add(count);
+				lastKeyHex = lastKey.GetBase16();
+			}
+			else if (nbGPUThread > 0) {
+				// GPU: get from GPUEngine
+				GPUEngine* g = (GPUEngine*)params[nbCPUThread].gpuEngine;
+				if (g && !g->lastProcessedKey.empty()) {
+					lastKeyHex = g->lastProcessedKey;
+				}
+			}
+
+			if (!lastKeyHex.empty()) {
+				FILE* f = fopen("resume.txt", "w");
+				if (f) {
+					time_t now = time(nullptr);
+					fprintf(f, "# Resume file generated at %s", ctime(&now));
+					fprintf(f, "START_KEY=%s\n", lastKeyHex.c_str());
+					fprintf(f, "TOTAL_KEYS=%llu\n", (unsigned long long)count);
+					fprintf(f, "TIMESTAMP=%llu\n", (unsigned long long)now);
+					fclose(f);
+				//	printf("\n💾 Resume point saved: resume.txt\n");
+				}
+			}
+
+			tLastLog = t1;
+		}
+
 		if (rKey > 0) {
 			if ((count - lastrKey) > (1000000 * rKey)) {
 				// rKey request
@@ -1370,9 +1447,22 @@ void KeyHunt::Search(int nbThread, std::vector<int> gpuId, std::vector<int> grid
 			endOfSearch = true;
 	}
 
-	free(params);
-
+	// Final log
+	logFile = fopen("progress.log", "a");
+	if (logFile) {
+		char timestamp[64];
+		time_t now = time(nullptr);
+		strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&now));
+		fprintf(logFile, "[%s] Search Ended. Final: %.2f%% | Keys: %s | Found: %d\n\n",
+			timestamp,
+			completedPerc,
+			formatThousands(getCPUCount() + getGPUCount()).c_str(),
+			nbFoundKey);
+		fclose(logFile);
 	}
+
+	free(params);
+}
 
 // ----------------------------------------------------------------------------
 

@@ -1,4 +1,4 @@
-#ifndef KEYHUNTH
+﻿#ifndef KEYHUNTH
 #define KEYHUNTH
 
 #include <string>
@@ -27,6 +27,8 @@ typedef struct {
 	Int rangeStart;
 	Int rangeEnd;
 	bool rKeyRequest;
+	// ✅ Add this line:
+	void* gpuEngine;  // GPUEngine* (cast when used)
 } TH_PARAM;
 
 
