@@ -1,8 +1,24 @@
 # CryptoHuntCuda 
 _Search for Bitcoin private keys._
 
+A GPU‑accelerated Bitcoin private key search tool with resumable scanning and periodic progress logging. This branch enhances crash recovery with automatic "logsave" and resume file updates.
 
+---
+#  Branch Highlights (logsave)
 
+- Added **automatic logsave** functionality to track progress and save resume points periodically  
+- Enhanced **`resume.txt`** update mechanism to reflect the latest scanned key checkpoint  
+
+---
+##  Quick Setup & Usage
+
+### Prerequisites
+
+- Python **3.6+** (`pip install segwit_addr` or `bech32`)  
+- **BinSort** (from VanitySearch)  
+- **CryptoHuntCuda** (CUDA-enabled build)  
+- CUDA GPU + drivers
+  
 # Features
 - For Bitcoin use ```--coin BTC``` and for Ethereum use ```--coin ETH```
 - Single address(rmd160 hash) for BTC or ETH address searching with mode ```-m ADDREES```
@@ -11,8 +27,39 @@ _Search for Bitcoin private keys._
 - Single xpoint searching with mode ```-m XPOINT```
 - Multiple xpoint searching with mode ```-m XPOINTS```
 - For XPoint[s] mode use x point of the public key, without 02 or 03 prefix(64 chars).
-- Cuda only.
+- Cuda Support.
+- Automatic **resume state saving** into `resume.txt` for easy crash resumes  
+### Example Workflow
 
+1. **List your target addresses** in `addresses.txt`.
+
+2. **Extract & sort hash160s**:
+
+    ```bash
+    python extract_hash160.py addresses.txt hash160_unsorted.bin
+    BinSort 20 hash160_unsorted.bin hash160.bin
+    ```
+
+3. **Start searching**:
+
+    ```bash
+    ./CryptoHuntCuda       -m addresses --coin BTC       --range 40000000000000000:7ffffffffffffffff       -i hash160.bin       -o found.txt
+    ```
+
+4. **After a crash**, use the last checkpoint in `resume.txt`:
+
+    ```bash
+    START_KEY=$(grep START_KEY resume.txt | cut -d= -f2)
+    ./CryptoHuntCuda       --range "$START_KEY:7ffffffffffffffff"       -i hash160.bin -m addresses       --coin BTC -o found.txt
+    ```
+
+Or simply run:
+
+```bash
+python resume_search.py
+```
+
+---
 # Usage
 - For multiple addresses or xpoints, file format must be binary with sorted data.
 - To convert Bitcoin addresses list(text format) to rmd160 hashes binary file use provided python script ```addresses_to_hash160.py```
@@ -505,6 +552,11 @@ $ make
 ```
 python3 -m pip install base58
 ```
+##  About Me (Tusar Ranjan)
+
+- **Role:** Software Engineer (Solo developer)  
+- **Location:** Rourkela  
+- **GitHub:** [tusarr10](https://github.com/tusarr10)  
 
 ## License
 CryptoHuntCuda is licensed under GPLv3.
