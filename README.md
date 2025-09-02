@@ -1,11 +1,7 @@
-# KeyHunt-Cuda 
-_Hunt for Bitcoin private keys._
+# CryptoHuntCuda 
+_Search for Bitcoin private keys._
 
-This is a modified version of VanitySearch by [JeanLucPons](https://github.com/JeanLucPons/VanitySearch/).
 
-Renamed from VanitySearch to KeyHunt (inspired from [keyhunt](https://github.com/albertobsd/keyhunt) by albertobsd).
-
-A lot of gratitude to all the developers whose codes has been used here.
 
 # Features
 - For Bitcoin use ```--coin BTC``` and for Ethereum use ```--coin ETH```
@@ -22,7 +18,7 @@ A lot of gratitude to all the developers whose codes has been used here.
 - To convert Bitcoin addresses list(text format) to rmd160 hashes binary file use provided python script ```addresses_to_hash160.py```
 - To convert pubkeys list(text format) to xpoints binary file use provided python script ```pubkeys_to_xpoint.py```
 - To convert Ethereum addresses list(text format) to keccak160 hashes binary file use provided python script ```eth_addresses_to_bin.py```
-- After getting binary files from python scripts, use ```BinSort``` tool provided with KeyHunt-Cuda to sort these binary files.
+- After getting binary files from python scripts, use ```BinSort``` tool provided with CryptoHuntCuda to sort these binary files.
 - Don't use XPoint[s] mode with ```uncompressed``` compression type.
 - CPU and GPU can not be used together, because the program divides the whole input range into equal parts for all the threads, so use either CPU or GPU so that the whole range can increment by all the threads with consistency.
 - Minimum entries for bloom filter is >= 2.
@@ -49,10 +45,10 @@ BinSort.exe
 Usage: BinSort.exe length in_file out_file
 ```
 
-## KeyHunt-Cuda
+## CryptoHuntCuda
 ```
-KeyHunt-Cuda.exe -h
-KeyHunt-Cuda [OPTIONS...] [TARGETS]
+CryptoHuntCuda.exe -h
+CryptoHuntCuda [OPTIONS...] [TARGETS]
 Where TARGETS is one address/xpont, or multiple hashes/xpoints file
 
 -h, --help                               : Display this message
@@ -91,9 +87,9 @@ Where TARGETS is one address/xpont, or multiple hashes/xpoints file
 
 CPU mode:
 ```
-KeyHunt-Cuda.exe -t 4 --gpui 0 --gpux 256,256 -m addresses --coin BTC --range 1:1fffffffff -i puzzle_1_37_hash160_out_sorted.bin
+CryptoHuntCuda.exe -t 4 --gpui 0 --gpux 256,256 -m addresses --coin BTC --range 1:1fffffffff -i puzzle_1_37_hash160_out_sorted.bin
 
-KeyHunt-Cuda v1.07
+CryptoHuntCuda v1.07
 
 COMP MODE    : COMPRESSED
 COIN TYPE    : BITCOIN
@@ -143,9 +139,9 @@ PubK (HEX): 02F9308A019258C31049344F85F89D5229B531C845836F99B08601F113BCE036F9
 
 ```
 ```
-KeyHunt-Cuda.exe -t 4 --gpui 0 --gpux 256,256 -m address --coin eth --range 8000000:fffffff 0xfda5c442e76a95f96c09782f1a15d3b58e32404f
+CryptoHuntCuda.exe -t 4 --gpui 0 --gpux 256,256 -m address --coin eth --range 8000000:fffffff 0xfda5c442e76a95f96c09782f1a15d3b58e32404f
 
-KeyHunt-Cuda v1.07
+CryptoHuntCuda v1.07
 
 COIN TYPE    : ETHEREUM
 SEARCH MODE  : Single Address
@@ -178,9 +174,9 @@ BYE
 ### GPU mode:
 ## Multiple addresses mode:
 ```
-KeyHunt-Cuda.exe -t 0 -g --gpui 0 --gpux 256,256 -m addresses --coin BTC -o Found.txt --range 1:1fffffffff -i puzzle_1_37_hash160_out_sorted.bin
+CryptoHuntCuda.exe -t 0 -g --gpui 0 --gpux 256,256 -m addresses --coin BTC -o Found.txt --range 1:1fffffffff -i puzzle_1_37_hash160_out_sorted.bin
 
-KeyHunt-Cuda v1.07
+CryptoHuntCuda v1.07
 
 COMP MODE    : COMPRESSED
 COIN TYPE    : BITCOIN
@@ -236,14 +232,21 @@ PubK (HEX): 0243601D61C836387485E9514AB5C8924DD2CFD466AF34AC95002727E1659D60F7
 =================================================================================
 
 ....
-
+```
+# Make it Resuamable By
+```
+@echo off
+for /f "tokens=2 delims==" %%i in ('findstr START_KEY resume.txt') do set START_KEY=%%i
+echo Resuming from %START_KEY%
+CryptoHuntCuda --range %START_KEY%:ffffffffff  -m addresses --coin BTC -o found.txt -i hash160.bin -t 0 -g --gpui 0 --gpux 256,256
+pause
 ```
 
 ## Multiple addresses mode with ethereum
 ```
-KeyHunt-Cuda.exe -t 0 -g --gpui 0 --gpux 256,256 -m addresses --coin eth --range 1:1fffffffff -i puzzle_1_37_addresses_eth_sorted.bin -o Found_Eth.txt
+CryptoHuntCuda.exe -t 0 -g --gpui 0 --gpux 256,256 -m addresses --coin eth --range 1:1fffffffff -i puzzle_1_37_addresses_eth_sorted.bin -o Found_Eth.txt
 
-KeyHunt-Cuda v1.07
+CryptoHuntCuda v1.07
 
 COIN TYPE    : ETHEREUM
 SEARCH MODE  : Multi Address
@@ -305,9 +308,9 @@ PubK (HEX): B4F1DE58B8B41AFE9FD4E5FFBDAFAEAB86C5DB4769C15D6E6011AE7351E547597875
 
 ## Single address mode
 ```
-KeyHunt-Cuda.exe -t 0 -g --gpui 0 --gpux 256,256 -m address --coin BTC --range 400000000:7ffffffff 1PWCx5fovoEaoBowAvF5k91m2Xat9bMgwb
+CryptoHuntCuda.exe -t 0 -g --gpui 0 --gpux 256,256 -m address --coin BTC --range 400000000:7ffffffff 1PWCx5fovoEaoBowAvF5k91m2Xat9bMgwb
 
-KeyHunt-Cuda v1.07
+CryptoHuntCuda v1.07
 
 COMP MODE    : COMPRESSED
 COIN TYPE    : BITCOIN
@@ -343,9 +346,9 @@ BYE
 
 ## Single address mode with ethereum
 ```
-KeyHunt-Cuda.exe -t 0 -g --gpui 0 --gpux 256,256 -m address --coin eth --range 800000000:fffffffff 0x1ffbb8f1dfc7e2308c39637e3f4b63c2362ddc6c
+CryptoHuntCuda.exe -t 0 -g --gpui 0 --gpux 256,256 -m address --coin eth --range 800000000:fffffffff 0x1ffbb8f1dfc7e2308c39637e3f4b63c2362ddc6c
 
-KeyHunt-Cuda v1.07
+CryptoHuntCuda v1.07
 
 COIN TYPE    : ETHEREUM
 SEARCH MODE  : Single Address
@@ -379,9 +382,9 @@ BYE
 
 ## Multiple XPoints mode
 ```
-KeyHunt-Cuda.exe -t 0 -g --gpui 0 --gpux 256,256 -m xpoints --coin BTC --range 1:1fffffffff -i xpoints_1_37_out_sorted.bin
+CryptoHuntCuda.exe -t 0 -g --gpui 0 --gpux 256,256 -m xpoints --coin BTC --range 1:1fffffffff -i xpoints_1_37_out_sorted.bin
 
-KeyHunt-Cuda v1.07
+CryptoHuntCuda v1.07
 
 COMP MODE    : COMPRESSED
 COIN TYPE    : BITCOIN
@@ -435,9 +438,9 @@ PubK (HEX): 03A7A4C30291AC1DB24B4AB00C442AA832F7794B5A0959BEC6E8D7FEE802289DCD
 
 ## Single XPoint mode
 ```
-KeyHunt-Cuda.exe -t 0 -g --gpui 0 --gpux 256,256 -m xpoint --coin BTC --range 8000000000:ffffffffff a2efa402fd5268400c77c20e574ba86409ededee7c4020e4b9f0edbee53de0d4
+CryptoHuntCuda.exe -t 0 -g --gpui 0 --gpux 256,256 -m xpoint --coin BTC --range 8000000000:ffffffffff a2efa402fd5268400c77c20e574ba86409ededee7c4020e4b9f0edbee53de0d4
 
-KeyHunt-Cuda v1.07
+CryptoHuntCuda v1.07
 
 COMP MODE    : COMPRESSED
 COIN TYPE    : BITCOIN
@@ -490,7 +493,7 @@ BYE
  - To build with CUDA: pass CCAP value according to your GPU compute capability
  - To get info about various Nvidia GPU CCAP value see [this](https://arnon.dk/matching-sm-architectures-arch-and-gencode-for-various-nvidia-cards/).
     ```sh
-    $ cd KeyHunt-Cuda
+    $ cd CryptoHuntCuda
     $ make gpu=1 CCAP=75 all
     ```
 #### BinSort
@@ -504,11 +507,11 @@ python3 -m pip install base58
 ```
 
 ## License
-KeyHunt-Cuda is licensed under GPLv3.
+CryptoHuntCuda is licensed under GPLv3.
 
 ## Donation
-- BTC: bc1qwngus7cv3z45w3xnsxrwru9t705azg4a0mux0h
-- ETH: 0x48bD1aE2B289feDBcCcba0D1591E7f088752bd99
+- BTC: tg@tusarr10
+- ETH: 
 
 ## __Disclaimer__
 ALL THE CODES, PROGRAM AND INFORMATION ARE FOR EDUCATIONAL PURPOSES ONLY. USE IT AT YOUR OWN RISK. THE DEVELOPER WILL NOT BE RESPONSIBLE FOR ANY LOSS, DAMAGE OR CLAIM ARISING FROM USING THIS PROGRAM.
