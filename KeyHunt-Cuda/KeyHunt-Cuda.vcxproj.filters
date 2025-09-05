@@ -74,6 +74,9 @@
     <ClCompile Include="TelegramAlert.cpp">
       <Filter>Feature</Filter>
     </ClCompile>
+    <ClCompile Include="Settings.cpp">
+      <Filter>Feature</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bloom.h">
@@ -152,6 +155,9 @@
       <Filter>Feature</Filter>
     </ClInclude>
     <ClInclude Include="TelegramAlert.h">
+      <Filter>Feature</Filter>
+    </ClInclude>
+    <ClInclude Include="Settings.h">
       <Filter>Feature</Filter>
     </ClInclude>
   </ItemGroup>

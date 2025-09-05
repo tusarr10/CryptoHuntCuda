@@ -109,124 +109,14 @@ int Bloom::reset()
 
 int Bloom::save(const char *filename)
 {
-//    if (filename == NULL || filename[0] == 0) {
-//        return 1;
-//    }
 
-//    int fd = open(filename, O_WRONLY | O_CREAT, 0644);
-//    if (fd < 0) {
-//        return 1;
-//    }
-
-//    ssize_t out = write(fd, BLOOM_MAGIC, strlen(BLOOM_MAGIC));
-//    if (out != strlen(BLOOM_MAGIC)) {
-//        goto save_error;        // LCOV_EXCL_LINE
-//    }
-
-//    uint16_t size = sizeof(struct bloom);
-//    out = write(fd, &size, sizeof(uint16_t));
-//    if (out != sizeof(uint16_t)) {
-//        goto save_error;        // LCOV_EXCL_LINE
-//    }
-
-//    out = write(fd, bloom, sizeof(struct bloom));
-//    if (out != sizeof(struct bloom)) {
-//        goto save_error;        // LCOV_EXCL_LINE
-//    }
-
-//    out = write(fd, _bf, _bytes);
-//    if (out != _bytes) {
-//        goto save_error;        // LCOV_EXCL_LINE
-//    }
-
-//    close(fd);
-//    return 0;
-//    // LCOV_EXCL_START
-//save_error:
-//    close(fd);
-//    return 1;
-//    // LCOV_EXCL_STOP
     return 0;
 }
 
 
 int Bloom::load(const char *filename)
 {
-//    int rv = 0;
 
-//    if (filename == NULL || filename[0] == 0) {
-//        return 1;
-//    }
-//    if (bloom == NULL) {
-//        return 2;
-//    }
-
-//    memset(bloom, 0, sizeof(struct bloom));
-
-//    int fd = open(filename, O_RDONLY);
-//    if (fd < 0) {
-//        return 3;
-//    }
-
-//    char line[30];
-//    memset(line, 0, 30);
-//    ssize_t in = read(fd, line, strlen(BLOOM_MAGIC));
-
-//    if (in != strlen(BLOOM_MAGIC)) {
-//        rv = 4;
-//        goto load_error;
-//    }
-
-//    if (strncmp(line, BLOOM_MAGIC, strlen(BLOOM_MAGIC))) {
-//        rv = 5;
-//        goto load_error;
-//    }
-
-//    uint16_t size;
-//    in = read(fd, &size, sizeof(uint16_t));
-//    if (in != sizeof(uint16_t)) {
-//        rv = 6;
-//        goto load_error;
-//    }
-
-//    if (size != sizeof(struct bloom)) {
-//        rv = 7;
-//        goto load_error;
-//    }
-
-//    in = read(fd, bloom, sizeof(struct bloom));
-//    if (in != sizeof(struct bloom)) {
-//        rv = 8;
-//        goto load_error;
-//    }
-
-//    _bf = NULL;
-//    if (_major != BLOOM_VERSION_MAJOR) {
-//        rv = 9;
-//        goto load_error;
-//    }
-
-//    _bf = (unsigned char *)malloc(_bytes);
-//    if (_bf == NULL) {
-//        rv = 10;        // LCOV_EXCL_LINE
-//        goto load_error;
-//    }
-
-//    in = read(fd, _bf, _bytes);
-//    if (in != _bytes) {
-//        rv = 11;
-//        free(_bf);
-//        _bf = NULL;
-//        goto load_error;
-//    }
-
-//    close(fd);
-//    return rv;
-
-//load_error:
-//    close(fd);
-//    _ready = 0;
-//    return rv;
     return 0;
 }
 

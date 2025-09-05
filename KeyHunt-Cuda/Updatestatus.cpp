@@ -10,6 +10,7 @@
 #include <iomanip>
 #include "json.hpp"
 #include "KeyHunt.h"
+#include "Settings.h"
 #include "SystemMonitor.h"
 #include "TelegramAlert.h"
 #
@@ -58,45 +59,67 @@ static std::string getTimestampStr(time_t* out) {
 	return std::string(buf);
 }
 
+static void logError(const std::string& message, const std::exception* ex = nullptr) {
+	std::ofstream log("Updatestatus_error.log", std::ios::app);
+	if (!log) return; // fail silently if log cannot be opened
+	log << "[" << currentDateTime() << "] " << message;
+	if (ex) {
+		log << " | Exception: " << ex->what();
+	}
+	log << std::endl;
+}
 
 
 static void writeOrderedStatus(const std::string& sysId, json& jSystem) {
 	json root;
-	try { root = json::parse(readFile("status.json")); }
-	catch (...) { root = json::object(); }
-
-	if (!root.contains("systems")) root["systems"] = json::object();
-	if (!root["systems"].contains(sysId)) root["systems"][sysId] = json::object();
-
-	// Merge current system JSON with new data
-	for (auto it = jSystem.begin(); it != jSystem.end(); ++it) {
-		root["systems"][sysId][it.key()] = it.value();
+	try {
+		root = json::parse(readFile("status.json"));
+	}
+	catch (const std::exception& e) {
+		logError("Failed to parse status.json", &e);
+		root = json::object();
+	}
+	catch (...) {
+		logError("Unknown error while parsing status.json");
+		root = json::object();
 	}
 
-	// Rebuild in fixed order
-	json orderedSystem = json::object();
-	static const std::vector<std::string> order = {
-		"init", "bloom", "load", "progress", "system", "found"
-	};
+	try {
+		if (!root.contains("systems")) root["systems"] = json::object();
+		if (!root["systems"].contains(sysId)) root["systems"][sysId] = json::object();
 
-	for (const auto& key : order) {
-		if (root["systems"][sysId].contains(key)) {
-			orderedSystem[key] = root["systems"][sysId][key];
+		// Merge current system JSON with new data
+		for (auto it = jSystem.begin(); it != jSystem.end(); ++it) {
+			root["systems"][sysId][it.key()] = it.value();
 		}
+
+		// Rebuild in fixed order
+		json orderedSystem = json::object();
+		static const std::vector<std::string> order = {
+			"init", "bloom", "load", "progress", "system", "found"
+		};
+
+		for (const auto& key : order) {
+			if (root["systems"][sysId].contains(key)) {
+				orderedSystem[key] = root["systems"][sysId][key];
+			}
+		}
+
+		root["systems"][sysId] = orderedSystem;
+
+		writeFile("status.json", root.dump(2));
 	}
-
-	root["systems"][sysId] = orderedSystem;
-
-	writeFile("status.json", root.dump(2));
+	catch (const std::exception& e) {
+		logError("Failed to writeOrderedStatus", &e);
+	}
+	catch (...) {
+		logError("Unknown error in writeOrderedStatus");
+	}
 }
 
 
 // ===== Implementations =====
-void Updatestatus::updateStatusInit(const std::string& rangeStart, const std::string& rangeEnd, int rangeBits,
-	int compMode, int coinType, int searchMode, bool useGpu, int nbCPUThread,
-	const std::vector<int>& gpuId, const std::vector<int>& gridSize,
-	bool useSSE, uint64_t rKey, uint32_t maxFound,
-	const std::string& inputFile, const std::string& outputFile)
+void Updatestatus::updateStatusInit(const std::string& rangeStart, const std::string& rangeEnd, int rangeBits, int compMode, int coinType, int searchMode, bool useGpu, int nbCPUThread, const std::vector<int>& gpuId, const std::vector<int>& gridSize, bool useSSE, uint64_t rKey, uint32_t maxFound, const std::string& inputFile, const std::string& outputFile)
 {
 	std::string sysId = SystemMonitor::getSystemIdentifier();
 
@@ -242,10 +265,10 @@ void Updatestatus::updateStatusFound(const std::string& hexKey, const std::strin
 	std::string sysId = SystemMonitor::getSystemIdentifier();
 
 	//--------------------------------------
-	if (TelegramAlert::TELEGRAM_ENABLED) {
+	if (Settings::Get().telegram.enabled) {
 		TelegramAlert::sendFoundKeyAlertHTML(
-			TelegramAlert::TELEGRAM_BOT_TOKEN,
-			TelegramAlert::TELEGRAM_CHAT_ID,
+			Settings::Get().telegram.botToken,
+			Settings::Get().telegram.chatId,
 			hexKey,
 			wifCompressed,
 			p2pkh,

@@ -130,6 +130,69 @@ std::string SystemMonitor::getSystemIdentifier() {
     return "Linux-Unknown";
 #endif
 }
+std::string SystemMonitor::getSystemMAC() {
+#if defined(_WIN32)
+    IP_ADAPTER_INFO adapterInfo[16];
+    DWORD buflen = sizeof(adapterInfo);
+
+    if (GetAdaptersInfo(adapterInfo, &buflen) == ERROR_SUCCESS) {
+        PIP_ADAPTER_INFO pAdapter = adapterInfo;
+        while (pAdapter) {
+            if (pAdapter->AddressLength > 0) {
+                std::ostringstream mac;
+                mac << std::hex << std::setfill('0');
+                for (UINT i = 0; i < pAdapter->AddressLength; i++) {
+                    mac << std::setw(2) << (int)pAdapter->Address[i];
+                    if (i < pAdapter->AddressLength - 1) mac << ":";
+                }
+                return mac.str(); // ? only MAC address
+            }
+            pAdapter = pAdapter->Next;
+        }
+    }
+    return "Windows-Unknown-ID";
+
+#else
+    struct ifaddrs* ifaddr;
+    if (getifaddrs(&ifaddr) == 0) {
+        for (struct ifaddrs* ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
+            if (ifa->ifa_addr == nullptr) continue;
+            if (ifa->ifa_addr->sa_family == AF_PACKET) {
+                struct sockaddr_ll* s = (struct sockaddr_ll*)ifa->ifa_addr;
+                if (s->sll_halen > 0) {
+                    std::ostringstream mac;
+                    mac << std::hex << std::setfill('0');
+                    for (int i = 0; i < s->sll_halen; i++) {
+                        mac << std::setw(2) << (int)s->sll_addr[i];
+                        if (i < s->sll_halen - 1) mac << ":";
+                    }
+                    freeifaddrs(ifaddr);
+                    return mac.str(); // ? only MAC address
+                }
+            }
+        }
+        freeifaddrs(ifaddr);
+    }
+    return "Linux-Unknown-ID";
+#endif
+}
+std::string SystemMonitor::getSystemName() {
+#if defined(_WIN32)
+    char hostname[MAX_COMPUTERNAME_LENGTH + 1];
+    DWORD size = sizeof(hostname);
+    if (GetComputerNameA(hostname, &size)) {
+        return std::string(hostname); // ? only hostname
+    }
+    return "Windows-UnknownHost";
+#else
+    char hostname[256];
+    if (gethostname(hostname, sizeof(hostname)) == 0) {
+        return std::string(hostname); // ? only hostname
+    }
+    return "Linux-UnknownHost";
+#endif
+}
+
 
 // ----------------------------------------------------------------------------
 // Get full system stats (GPU, CPU, RAM)

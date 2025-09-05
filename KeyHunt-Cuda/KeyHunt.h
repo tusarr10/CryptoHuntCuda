@@ -50,8 +50,7 @@ public:
 	void Search(int nbThread, std::vector<int> gpuId, std::vector<int> gridSize, bool& should_exit);
 	void FindKeyCPU(TH_PARAM* p);
 	void FindKeyGPU(TH_PARAM* p);
-	// ✅ Add this declaration:
-	//void updateStatusProgress(double keyRate, uint64_t totalKeys, int found, double progress);
+	
 	static std::string formatThousands(uint64_t x);
 	static std::string escapeJson(const std::string& s);
 	

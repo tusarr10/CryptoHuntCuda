@@ -31,6 +31,7 @@
     <ClCompile Include="Point.cpp" />
     <ClCompile Include="Random.cpp" />
     <ClCompile Include="SECP256K1.cpp" />
+    <ClCompile Include="Settings.cpp" />
     <ClCompile Include="StatusWriter.cpp" />
     <ClCompile Include="SystemMonitor.cpp" />
     <ClCompile Include="TelegramAlert.cpp" />
@@ -59,6 +60,7 @@
     <ClInclude Include="Point.h" />
     <ClInclude Include="Random.h" />
     <ClInclude Include="SECP256k1.h" />
+    <ClInclude Include="Settings.h" />
     <ClInclude Include="StatusWriter.h" />
     <ClInclude Include="SystemMonitor.h" />
     <ClInclude Include="TelegramAlert.h" />

@@ -36,20 +36,22 @@ public:
         double progress);
 
     static void sendPeriodicTelegramUpdate();
+    static std::string getCurrentTime();
 
     // --- Config ---
-    static const std::string TELEGRAM_BOT_TOKEN;
+   /* static const std::string TELEGRAM_BOT_TOKEN;
     static const std::string TELEGRAM_CHAT_ID;
     static const bool TELEGRAM_ENABLED;
     static const bool ALERT_HIGH_TEMP;
     static const float TEMP_THRESHOLD;
     static const bool PROGRESS_UPDATES;
-    static const int PROGRESS_INTERVAL_MINUTES;
+    static const int PROGRESS_INTERVAL_MINUTES;*/
 
 private:
-    static std::string getCurrentTime();
+   
     static std::string urlEncode(const std::string& value);
     static std::string escapeMarkdown(const std::string& text);
     static std::string encodeToUTF8(const std::string& text);
+   static  void logTelegramStatus(const std::string& status, const std::string& messageBody, const std::string& error, const std::string& currentStatus);
     static time_t lastPeriodicSend;
 };

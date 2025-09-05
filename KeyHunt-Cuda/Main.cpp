@@ -21,6 +21,7 @@
 #include <signal.h>       // 🚩 Unix signal handling (Ctrl+C → graceful exit)
 #include <unistd.h>       // 🐧 Unix system calls (sleep, getpid, etc.)
 #endif
+#include "Settings.h"
 #include "StatusWriter.h"
 #include "Updatestatus.h"
 
@@ -285,6 +286,7 @@ int main(int argc, char** argv)
 	// Uses current time + CPU cycle count to generate a unique seed.
 	// Important for random key generation mode (-r).
 
+	Settings::LoadFromFile("config.json");
 	// -----------------------------
 	// Configuration Variables
 	// -----------------------------
