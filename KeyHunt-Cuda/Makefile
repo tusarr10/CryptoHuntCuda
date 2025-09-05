@@ -1,7 +1,7 @@
 #---------------------------------------------------------------------
 # Makefile for CryptoHuntCuda 
 # Author : Modified for tusarr10 project
-# Added TelegramAlert support with libcurl
+# Added support for Settings, StatusWriter, SystemMonitor, Updatestatus
 # Cross-platform compatible (Linux & Windows)
 #---------------------------------------------------------------------
 
@@ -12,9 +12,6 @@
 # To clean up object files, use:
 #    make clean
 
-#sudo apt update
-#sudo apt install libcurl4-openssl-dev
-
 #---------------------------------------------------------------------
 
 SRC = Base58.cpp IntGroup.cpp Main.cpp Bloom.cpp Random.cpp \
@@ -23,7 +20,8 @@ SRC = Base58.cpp IntGroup.cpp Main.cpp Bloom.cpp Random.cpp \
       hash/sha256.cpp hash/sha512.cpp hash/ripemd160_sse.cpp \
       hash/sha256_sse.cpp hash/keccak160.cpp GmpUtil.cpp \
       CmdParse.cpp Bech32.cpp \
-      TelegramAlert.cpp   # <-- Added TelegramAlert.cpp
+      TelegramAlert.cpp Settings.cpp StatusWriter.cpp \
+      SystemMonitor.cpp Updatestatus.cpp   # ✅ Added new source files here
 
 OBJDIR = obj
 
@@ -33,14 +31,16 @@ OBJET = $(addprefix $(OBJDIR)/, \
         IntMod.o Point.o SECP256K1.o KeyHunt.o GPU/GPUGenerate.o \
         hash/ripemd160.o hash/sha256.o hash/sha512.o \
         hash/ripemd160_sse.o hash/sha256_sse.o hash/keccak160.o \
-        GPU/GPUEngine.o GmpUtil.o CmdParse.o Bech32.o TelegramAlert.o)  # <-- added TelegramAlert.o
+        GmpUtil.o CmdParse.o Bech32.o TelegramAlert.o \
+        Settings.o StatusWriter.o SystemMonitor.o Updatestatus.o)  # ✅ Added new objects here
 else
 OBJET = $(addprefix $(OBJDIR)/, \
         Base58.o IntGroup.o Main.o Bloom.o Random.o Timer.o Int.o \
         IntMod.o Point.o SECP256K1.o KeyHunt.o GPU/GPUGenerate.o \
         hash/ripemd160.o hash/sha256.o hash/sha512.o \
         hash/ripemd160_sse.o hash/sha256_sse.o hash/keccak160.o \
-        GmpUtil.o CmdParse.o Bech32.o TelegramAlert.o)  # <-- added TelegramAlert.o
+        GmpUtil.o CmdParse.o Bech32.o TelegramAlert.o \
+        Settings.o StatusWriter.o SystemMonitor.o Updatestatus.o)  # ✅ Added new objects here
 endif
 
 CXX        = g++
@@ -70,7 +70,7 @@ else
 CXXFLAGS   = -DWITHGPU -m64 -mssse3 -Wno-write-strings -O2 \
              -I. -I$(CUDA)/include -I$(LOCAL_GMP)
 endif
-LFLAGS     = -lgmp -lpthread -L$(CUDA)/lib64 -lcudart -lcurl  # <-- added -lcurl for Telegram
+LFLAGS     = -lgmp -lpthread -L$(CUDA)/lib64 -lcudart   # ✅ Removed -lcurl, not needed
 else
 ifdef debug
 CXXFLAGS   = -m64 -mssse3 -Wno-write-strings -g \
@@ -79,7 +79,7 @@ else
 CXXFLAGS   = -m64 -mssse3 -Wno-write-strings -O2 \
              -I. -I$(CUDA)/include -I$(LOCAL_GMP)
 endif
-LFLAGS     = -lgmp -lpthread -lcurl   # <-- added -lcurl for Telegram
+LFLAGS     = -lgmp -lpthread   # ✅ Removed -lcurl, not needed
 endif
 
 # --------------------------------------------------------------------
@@ -136,11 +136,11 @@ clean:
 	@rm -f CryptoHuntCuda
 
 # ---------------------------------------------------------------------
-# ✅ Changes made:
-# 1. Added TelegramAlert.cpp to SRC and OBJET
-# 2. Linked libcurl (-lcurl) in LFLAGS
-# 3. Added cross-platform directory creation (Windows & Linux)
-# 4. Comments on GPU object compilation kept
-# 5. Now works with Telegram messages directly from C++
-# 6. Compatible with both debug/release and GPU/non-GPU builds
+# ✅ Summary of Changes:
+# 1. Added new source files to SRC: Settings.cpp, StatusWriter.cpp, SystemMonitor.cpp, Updatestatus.cpp
+# 2. Added corresponding object files to OBJET for compilation/linking
+# 3. Removed -lcurl from LFLAGS since curl is not used
+# 4. Comments added to track changes clearly
+# 5. Maintained GPU/non-GPU and debug/release builds
+# 6. Directory creation for obj, obj/GPU, obj/hash ensured cross-platform
 # ---------------------------------------------------------------------
