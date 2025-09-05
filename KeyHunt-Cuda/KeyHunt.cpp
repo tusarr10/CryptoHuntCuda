@@ -11,6 +11,9 @@
 #include <algorithm>
 #include <iostream>
 #include <cassert>
+
+#include "TelegramAlert.h"
+#include "Updatestatus.h"
 #ifndef WIN64
 #include <pthread.h>
 #endif
@@ -19,6 +22,7 @@
 
 Point Gn[CPU_GRP_SIZE / 2];
 Point _2Gn;
+//--------------------------------------------
 
 // ----------------------------------------------------------------------------
 
@@ -120,6 +124,7 @@ KeyHunt::KeyHunt(const std::string& inputFile, int compMode, int searchMode, int
 	printf("\n");
 
 	bloom->print();
+	Updatestatus::updateStatusLoad(i);
 	printf("\n");
 
 	InitGenratorTable();
@@ -209,6 +214,9 @@ KeyHunt::~KeyHunt()
 }
 
 // ----------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------------------
 
 double log1(double x)
 {
@@ -319,30 +327,62 @@ void KeyHunt::output1(std::string addr, std::string pAddrCompressed, std::string
 
 		fprintf(f, "Bech32 (bc1..): %s\n", addrs[2].c_str());
 		fprintf(stdout, "Bech32 (bc1..): %s\n", addrs[2].c_str());
+		// --- Private Keys ---
+		Int privKey(pvtKey);
+		std::string wifCompressed = secp->GetPrivAddress(true, privKey);
+		std::string wifUncompressed = secp->GetPrivAddress(false, privKey);
+
+		fprintf(f, "Priv (WIF-C): %s\n", wifCompressed.c_str());
+		fprintf(stdout, "Priv (WIF-C): %s\n", wifCompressed.c_str());
+
+		fprintf(f, "Priv (WIF-U): %s\n", wifUncompressed.c_str());
+		fprintf(stdout, "Priv (WIF-U): %s\n", wifUncompressed.c_str());
+
+		fprintf(f, "Priv (HEX)  : %s\n", pAddrHex.c_str());
+		fprintf(stdout, "Priv (HEX)  : %s\n", pAddrHex.c_str());
+
+		fprintf(f, "PubK (HEX)  : %s\n", pubKeyHex.c_str());
+		fprintf(stdout, "PubK (HEX)  : %s\n", pubKeyHex.c_str());
+
+		fprintf(f, "%s\n", separator);
+		fprintf(stdout, "%s\n", separator);
+		Updatestatus::updateStatusFound(pAddrHex, pAddrCompressed, addrs[0], addrs[1], addrs[2]);
+
 	}
+	if (coinType == COIN_ETH) {
+		// --- Reconstruct Point using public method ---
+		bool isCompressed;
+		Point pubKey = secp->ParsePublicKeyHex(pubKeyHex, isCompressed);
+		// Generate ETH address
+		std::string ethAddr = secp->GetAddressETH(pubKey);
+		fprintf(f, "ETH Address : %s\n", ethAddr.c_str());
+		fprintf(stdout, "ETH Address : %s\n", ethAddr.c_str());
+		Int privKey(pvtKey);
+		std::string wifCompressed = secp->GetPrivAddress(true, privKey);
+		std::string wifUncompressed = secp->GetPrivAddress(false, privKey);
 
-	// --- Private Keys ---
-	Int privKey(pvtKey);
-	std::string wifCompressed = secp->GetPrivAddress(true, privKey);
-	std::string wifUncompressed = secp->GetPrivAddress(false, privKey);
+		/*fprintf(f, "Priv (WIF-C): %s\n", wifCompressed.c_str());
+		fprintf(stdout, "Priv (WIF-C): %s\n", wifCompressed.c_str());*/
 
-	fprintf(f, "Priv (WIF-C): %s\n", wifCompressed.c_str());
-	fprintf(stdout, "Priv (WIF-C): %s\n", wifCompressed.c_str());
+		/*fprintf(f, "Priv (WIF-U): %s\n", wifUncompressed.c_str());
+		fprintf(stdout, "Priv (WIF-U): %s\n", wifUncompressed.c_str());*/
 
-	fprintf(f, "Priv (WIF-U): %s\n", wifUncompressed.c_str());
-	fprintf(stdout, "Priv (WIF-U): %s\n", wifUncompressed.c_str());
+		fprintf(f, "Priv (HEX)  : %s\n", pAddrHex.c_str());
+		fprintf(stdout, "Priv (HEX)  : %s\n", pAddrHex.c_str());
 
-	fprintf(f, "Priv (HEX)  : %s\n", pAddrHex.c_str());
-	fprintf(stdout, "Priv (HEX)  : %s\n", pAddrHex.c_str());
+		fprintf(f, "PubK (HEX)  : %s\n", pubKeyHex.c_str());
+		fprintf(stdout, "PubK (HEX)  : %s\n", pubKeyHex.c_str());
 
-	fprintf(f, "PubK (HEX)  : %s\n", pubKeyHex.c_str());
-	fprintf(stdout, "PubK (HEX)  : %s\n", pubKeyHex.c_str());
+		fprintf(f, "%s\n", separator);
+		fprintf(stdout, "%s\n", separator);
 
-	fprintf(f, "%s\n", separator);
-	fprintf(stdout, "%s\n", separator);
+	}
+	
+	
 
 	if (needToClose)
 		fclose(f);
+
 
 #ifdef WIN64
 	ReleaseMutex(ghMutex);
@@ -1217,6 +1257,9 @@ void KeyHunt::SetupRanges(uint32_t totalThreads)
 }
 
 // ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// Save real-time status to status.json for web dashboard
+// ----------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------
 void KeyHunt::Search(int nbThread, std::vector<int> gpuId, std::vector<int> gridSize, bool& should_exit)
@@ -1367,6 +1410,16 @@ void KeyHunt::Search(int nbThread, std::vector<int> gpuId, std::vector<int> grid
 		avgKeyRate /= (double)(nbSample);
 		avgGpuKeyRate /= (double)(nbSample);
 
+		// ✅ Save status.json every 5 seconds
+		static double tLastStatus = 0.0;
+		if (t1 - tLastStatus >= 5.0) {
+			uint64_t totalKeys = getCPUCount() + getGPUCount();
+			Updatestatus::updateStatusProgress(avgKeyRate / 1e6, totalKeys, completedPerc,nbFoundKey);
+			tLastStatus = t1;
+		}
+		// ✅ Trigger periodic Telegram update
+		TelegramAlert::sendPeriodicTelegramUpdate();
+
 		if (isAlive(params)) {
 			memset(timeStr, '\0', 256);
 			printf("\r[%s] [CPU+GPU: %.2f Mk/s] [GPU: %.2f Mk/s] [C: %.2f %%] [R: %llu] [T: %s (%d bit)] [F: %d]  ",
@@ -1460,6 +1513,7 @@ void KeyHunt::Search(int nbThread, std::vector<int> gpuId, std::vector<int> grid
 			nbFoundKey);
 		fclose(logFile);
 	}
+	
 
 	free(params);
 }

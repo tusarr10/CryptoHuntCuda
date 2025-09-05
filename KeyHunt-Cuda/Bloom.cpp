@@ -1,7 +1,10 @@
-#include "Bloom.h"
+﻿#include "Bloom.h"
 #include <iostream>
 #include <math.h>
 #include <string.h>
+
+#include "KeyHunt.h"
+#include "Updatestatus.h"
 //#include <unistd.h>
 
 #define MAKESTRING(n) STRING(n)
@@ -83,6 +86,15 @@ void Bloom::print()
     //printf(" (%u KB, %u MB)\n", KB, MB);
     printf(" (%u MB)\n", MB);
     printf("  Hash funcs : %d\n", _hashes);
+
+    // ✅ Extract real values and update status.json
+    uint64_t entries = _entries;
+    double errorRate = _error;  // Same as new Bloom(2 * N, 0.000001)
+    int64_t bits = _bits;
+    int64_t bytes = _bytes;
+    int hashFunctions = _hashes;
+
+    Updatestatus::updateStatusBloom(entries, errorRate, bits, bytes, hashFunctions);
 }
 
 

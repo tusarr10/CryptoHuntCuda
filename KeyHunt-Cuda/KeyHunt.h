@@ -50,6 +50,11 @@ public:
 	void Search(int nbThread, std::vector<int> gpuId, std::vector<int> gridSize, bool& should_exit);
 	void FindKeyCPU(TH_PARAM* p);
 	void FindKeyGPU(TH_PARAM* p);
+	// ✅ Add this declaration:
+	//void updateStatusProgress(double keyRate, uint64_t totalKeys, int found, double progress);
+	static std::string formatThousands(uint64_t x);
+	static std::string escapeJson(const std::string& s);
+	
 
 private:
 
@@ -86,7 +91,8 @@ private:
 	int CheckBloomBinary(const uint8_t* _xx, uint32_t K_LENGTH);
 	bool MatchHash(uint32_t* _h);
 	bool MatchXPoint(uint32_t* _h);
-	std::string formatThousands(uint64_t x);
+//	std::string formatThousands(uint64_t x);
+	
 	char* toTimeStr(int sec, char* timeStr);
 
 	Secp256K1* secp;
@@ -124,6 +130,8 @@ private:
 	uint8_t* DATA;
 	uint64_t TOTAL_COUNT;
 	uint64_t BLOOM_N;
+
+	
 
 #ifdef WIN64
 	HANDLE ghMutex;

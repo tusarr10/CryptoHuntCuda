@@ -21,6 +21,8 @@
 #include <signal.h>       // 🚩 Unix signal handling (Ctrl+C → graceful exit)
 #include <unistd.h>       // 🐧 Unix system calls (sleep, getpid, etc.)
 #endif
+#include "StatusWriter.h"
+#include "Updatestatus.h"
 
 // Project version
 #define RELEASE "1.00"        // Shown in --version and help
@@ -664,6 +666,11 @@ int main(int argc, char** argv)
 	KeyHunt* v;  // Main search engine object
 
 	// Create KeyHunt instance based on search mode
+	Int rangeDiff2;
+	// ✅ Correctly compute rangeDiff2
+	rangeDiff2.Set(&rangeEnd);
+	rangeDiff2.Sub(&rangeStart);
+
 	switch (searchMode) {
 	case (int)SEARCH_MODE_MA:
 	case (int)SEARCH_MODE_MX:
@@ -671,6 +678,16 @@ int main(int argc, char** argv)
 		v = new KeyHunt(inputFile, compMode, searchMode, coinType, gpuEnable,
 			outputFile, useSSE, maxFound, rKey,
 			rangeStart.GetBase16(), rangeEnd.GetBase16(), should_exit);
+
+		 
+		//rangeDiff2.Sub(&rangeStart);
+		Updatestatus::updateStatusInit(
+			rangeStart.GetBase16(), rangeEnd.GetBase16(), rangeDiff2.GetBitLength(),
+			compMode, coinType, searchMode, gpuEnable, nbCPUThread, gpuId, gridSize,
+			useSSE, rKey, maxFound, inputFile, outputFile
+		);
+		
+
 		break;
 	case (int)SEARCH_MODE_SA:
 	case (int)SEARCH_MODE_SX:

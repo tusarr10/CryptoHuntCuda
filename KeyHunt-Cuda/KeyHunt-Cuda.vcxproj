@@ -31,7 +31,11 @@
     <ClCompile Include="Point.cpp" />
     <ClCompile Include="Random.cpp" />
     <ClCompile Include="SECP256K1.cpp" />
+    <ClCompile Include="StatusWriter.cpp" />
+    <ClCompile Include="SystemMonitor.cpp" />
+    <ClCompile Include="TelegramAlert.cpp" />
     <ClCompile Include="Timer.cpp" />
+    <ClCompile Include="Updatestatus.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Base58.h" />
@@ -50,11 +54,16 @@
     <ClInclude Include="hash\sha512.h" />
     <ClInclude Include="Int.h" />
     <ClInclude Include="IntGroup.h" />
+    <ClInclude Include="json.hpp" />
     <ClInclude Include="KeyHunt.h" />
     <ClInclude Include="Point.h" />
     <ClInclude Include="Random.h" />
     <ClInclude Include="SECP256k1.h" />
+    <ClInclude Include="StatusWriter.h" />
+    <ClInclude Include="SystemMonitor.h" />
+    <ClInclude Include="TelegramAlert.h" />
     <ClInclude Include="Timer.h" />
+    <ClInclude Include="Updatestatus.h" />
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="GPU\GPUEngine.cu" />
