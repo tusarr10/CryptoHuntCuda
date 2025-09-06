@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Wait 60 seconds after boot/login
+sleep 10
+
+# Change to CryptoHuntCuda directory
+cd /home/tusar/CryptoHuntCuda || exit
+
+# Read START_KEY from resume.txt
+START_KEY=$(grep START_KEY resume.txt | cut -d'=' -f2)
+
+echo "Resuming from $START_KEY"
+
+# Launch CryptoHuntCuda starting from last saved key
+./CryptoHuntCuda --range ${START_KEY}:ffffffffffffffffffffffffffffffff \
+    -m addresses --coin BTC -o found.txt -i hash160.bin -t 0 -g --gpui 0 --gpux 256,256
+
+# Keep terminal open (if run manually)
+exec bash
