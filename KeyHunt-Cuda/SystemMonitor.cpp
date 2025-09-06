@@ -18,6 +18,7 @@
 #include <ifaddrs.h>
 #include <netpacket/packet.h>
 #include <netdb.h>
+#include <thread>
 #endif
 
 // ----------------------------------------------------------------------------
@@ -271,9 +272,9 @@ SystemStats SystemMonitor::getStats() {
 #else
     // Linux: CPU Usage from /proc/stat
     std::ifstream statFile("/proc/stat");
-    std::string line;
-    if (std::getline(statFile, line) && line.find("cpu ") != std::string::npos) {
-        std::stringstream ss(line);
+    std::string line_cpu;
+    if (std::getline(statFile, line_cpu) && line_cpu.find("cpu ") != std::string::npos) {
+        std::stringstream ss(line_cpu);
         std::string cpu;
         long user, nice, system, idle, iowait, irq, softirq;
         ss >> cpu >> user >> nice >> system >> idle >> iowait >> irq >> softirq;
@@ -322,17 +323,17 @@ SystemStats SystemMonitor::getStats() {
 #else
     // Linux: RAM Usage from /proc/meminfo
     std::ifstream memfile("/proc/meminfo");
-    std::string line;
+    std::string line_memory;
     long total = 0, free = 0, available = 0;
-    while (std::getline(memfile, line)) {
-        if (line.find("MemTotal") != std::string::npos) {
-            total = std::stol(line.substr(10));
+    while (std::getline(memfile, line_memory)) {
+        if (line_memory.find("MemTotal") != std::string::npos) {
+            total = std::stol(line_memory.substr(10));
         }
-        else if (line.find("MemFree") != std::string::npos) {
-            free = std::stol(line.substr(9));
+        else if (line_memory.find("MemFree") != std::string::npos) {
+            free = std::stol(line_memory.substr(9));
         }
-        else if (line.find("MemAvailable") != std::string::npos) {
-            available = std::stol(line.substr(13));
+        else if (line_memory.find("MemAvailable") != std::string::npos) {
+            available = std::stol(line_memory.substr(13));
         }
     }
     stats.memory.ram_total_mb = total / 1024;

@@ -31,6 +31,7 @@ OBJET = $(addprefix $(OBJDIR)/, \
         IntMod.o Point.o SECP256K1.o KeyHunt.o GPU/GPUGenerate.o \
         hash/ripemd160.o hash/sha256.o hash/sha512.o \
         hash/ripemd160_sse.o hash/sha256_sse.o hash/keccak160.o \
+        GPU/GPUEngine.o \
         GmpUtil.o CmdParse.o Bech32.o TelegramAlert.o \
         Settings.o StatusWriter.o SystemMonitor.o Updatestatus.o)  # ✅ Added new objects here
 else
