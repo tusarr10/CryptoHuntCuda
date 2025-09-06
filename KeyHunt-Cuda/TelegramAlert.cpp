@@ -354,7 +354,7 @@ void TelegramAlert::sendPeriodicTelegramUpdate() {
 		}
 		//Status_message += "\n\n⏱ *Time:* " + getCurrentTime();
 		//Status_message += Settings::Get().telegram.botToken +" CID = " + Settings::Get().telegram.chatId;
-		std::cout << "[DEBUG] Markdown message:\n" << Status_message << std::endl;
+		//std::cout << "[DEBUG] Markdown message:\n" << Status_message << std::endl;
 		// Send message using UTF-8 safe file approach
 		sendMessage(Settings::Get().telegram.botToken, Settings::Get().telegram.chatId, Status_message, "HTML"); //or status message
 	
