@@ -7,7 +7,8 @@ A GPU‑accelerated Bitcoin private key search tool with resumable scanning and 
 #  Branch Highlights (logsave)
 
 - Added **automatic logsave** functionality to track progress and save resume points periodically  
-- Enhanced **`resume.txt`** update mechanism to reflect the latest scanned key checkpoint  
+- Enhanced **`resume.txt`** update mechanism to reflect the latest scanned key checkpoint
+- Check Resource At https://drive.google.com/drive/folders/1erzOROjIbZp9Z5lxhjzmumUO7UNmWIkf?usp=sharing
 
 ---
 ##  Quick Setup & Usage
